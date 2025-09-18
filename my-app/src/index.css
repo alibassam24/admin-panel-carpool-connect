@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* Optional: your component classes using Tailwind utilities */
+@layer components {
+  .btn { @apply px-4 py-2 rounded-xl font-medium transition relative overflow-hidden; }
+  .btn-primary { @apply bg-green-600 text-white hover:bg-green-700; }
+  .card { @apply bg-white/5 border border-white/10 rounded-xl backdrop-blur; }
+  .input { @apply w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white; }
+  .chip { @apply px-2 py-1 rounded-full text-xs border border-white/20; }
+}
