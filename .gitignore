@@ -37,3 +37,9 @@ Thumbs.db
 # tailwind cache
 /.turbo
 /.parcel-cache
+
+
+# Deployment platform configs
+.vercel
+.netlify
+.render
