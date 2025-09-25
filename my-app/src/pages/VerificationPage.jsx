@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import Pagination from "../components/Pagination";
 import { useAuth } from "../main"; // admin context
-
+import { useRealtime } from "../hooks/useRealtime";
 export default function VerificationPage() {
   const { user: admin } = useAuth();
   const [rows, setRows] = useState([]);

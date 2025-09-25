@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-
+import { useRealtime } from "../hooks/useRealtime";
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [err, setErr] = useState("");

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import Pagination from "../components/Pagination";
-
+import { useRealtime } from "../hooks/useRealtime";
 export default function UsersPage() {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(1);

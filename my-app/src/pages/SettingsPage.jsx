@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-
+import { useRealtime } from "../hooks/useRealtime";
 export default function SettingsPage() {
   const [rows, setRows] = useState([]);
   const [err, setErr] = useState("");
