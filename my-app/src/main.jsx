@@ -71,9 +71,8 @@ function AuthProvider({ children }) {
       setTimeout(() => reject(new Error("Timeout")), ms)
     );
 
-  const fetchRoleWithTimeout = async (u) => {
-    return Promise.race([fetchRole(u), timeout(4000)]);
-  };
+  const fetchRoleWithTimeout = async (u) =>
+    Promise.race([fetchRole(u), timeout(4000)]);
 
   useEffect(() => {
     let active = true;
@@ -170,7 +169,6 @@ function ProtectedRoute({ children }) {
 /* ---------- Layout ---------- */
 function Topbar({ onMenu }) {
   const { logout, user } = useAuth();
-  const { toggle } = useTheme();
   return (
     <div className="topbar container flex-between">
       <button className="hamburger" onClick={onMenu} aria-label="Menu">
@@ -178,9 +176,6 @@ function Topbar({ onMenu }) {
       </button>
       <div className="brand-text">Carpool Connect — Admin</div>
       <div className="flex-center gap-md">
-        <button className="btn btn-secondary" onClick={toggle}>
-          🌗
-        </button>
         <span className="user-email">{user?.email}</span>
         <button className="btn btn-primary btn-sm" onClick={logout}>
           Logout
@@ -195,6 +190,12 @@ function Sidebar({ open, onClose }) {
     `sidebar-link ${isActive ? "active-link" : ""}`;
   return (
     <aside className={`sidebar ${open ? "open" : ""}`}>
+      <div className="sidebar-header">
+        
+        <button className="sidebar-close" onClick={onClose}>
+          ✕
+        </button>
+      </div>
       <NavLink className={linkCls} to="/" end onClick={onClose}>
         Dashboard
       </NavLink>
@@ -221,8 +222,10 @@ function AppShell({ children }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="shell">
-      <Topbar onMenu={() => setOpen((o) => !o)} />
+      <Topbar onMenu={() => setOpen(true)} />
       <div className="shell-main">
+        {/* Overlay for mobile */}
+        {open && <div className="sidebar-overlay" onClick={() => setOpen(false)} />}
         <Sidebar open={open} onClose={() => setOpen(false)} />
         <main className="page">{children}</main>
       </div>

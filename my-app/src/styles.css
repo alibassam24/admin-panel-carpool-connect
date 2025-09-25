@@ -27,7 +27,7 @@ button, input, select, textarea { font-family: inherit; }
 /* =========================
    TOPBAR
    ========================= */
-.topbar {
+/* .topbar {
   background: rgba(0,0,0,0.45);
   border-bottom: 1px solid rgba(255,255,255,0.1);
   padding: 0.85rem 1.25rem;
@@ -37,8 +37,51 @@ button, input, select, textarea { font-family: inherit; }
   position: sticky;
   top: 0;
   z-index: 40;
+  
 }
-.user-email { font-size: 0.9rem; color: rgba(255,255,255,0.7); }
+.user-email { font-size: 0.9rem; color: rgba(255,255,255,0.7);  } */
+
+
+
+
+
+.topbar {
+  background: rgba(0, 0, 0, 0.45);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1.5rem; /* even vertical rhythm */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.topbar .brand-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e9f2ef;
+}
+
+.topbar .flex-center {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* spacing between email & button */
+}
+
+.user-email {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(233, 242, 239, 0.85); /* softer brand color */
+  white-space: nowrap; /* prevents wrapping */
+}
+
+
+
+
+
+
+
 
 /* =========================
    SIDEBAR
@@ -60,7 +103,14 @@ button, input, select, textarea { font-family: inherit; }
 }
 .sidebar-link:hover { background: rgba(255,255,255,0.08); }
 .active-link { background: rgba(58,161,123,0.25); }
-.hamburger { display: none; font-size: 1.5rem; cursor: pointer; }
+.hamburger {
+  display: none;
+  font-size: 1.6rem;
+  background: none;
+  border: none;
+  color: #e9f2ef;
+  cursor: pointer;
+}
 
 @media (max-width: 768px) {
   .sidebar {
@@ -726,3 +776,34 @@ button, input, select, textarea { font-family: inherit; }
 
 
 /*main.jsx*/
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 40;
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    display: block;
+  }
+}
+
+.sidebar-close {
+  display: none;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  color: #e9f2ef;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .sidebar-close {
+    display: block;
+  }
+}
