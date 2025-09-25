@@ -5,7 +5,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [err, setErr] = useState("");
 
-  // Fallback aggregator if RPCs don’t exist yet.
+  // fallback aggregator if RPCs don’t exist yet
   const countBy = (rows, key) => {
     const map = new Map();
     for (const r of rows || []) {
@@ -21,7 +21,7 @@ export default function DashboardPage() {
       try {
         setErr("");
 
-        // --- Totals (cheap HEAD counts) ---
+        // --- Totals ---
         const [u, r, c, v, petrol] = await Promise.all([
           supabase.from("users").select("*", { head: true, count: "exact" }),
           supabase.from("rides").select("*", { head: true, count: "exact" }),
@@ -30,15 +30,22 @@ export default function DashboardPage() {
             .from("driver_documents")
             .select("*", { head: true, count: "exact" })
             .eq("status", "pending"),
-          supabase.from("settings").select("value").eq("key", "petrol_price").maybeSingle(),
+          supabase
+            .from("settings")
+            .select("value")
+            .eq("key", "petrol") // ✅ fix: match your actual DB key
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
         ]);
+
         if (u.error) throw u.error;
         if (r.error) throw r.error;
         if (c.error) throw c.error;
         if (v.error) throw v.error;
         if (petrol.error) throw petrol.error;
 
-        // --- Grouped counts via RPCs (with safe fallback) ---
+        // --- Grouped counts ---
         const [
           usersGroupedRes,
           ridesGroupedRes,
@@ -56,7 +63,7 @@ export default function DashboardPage() {
         let complaintsByStatus = complaintsGroupedRes.data;
         let driverDocsByStatus = docsGroupedRes.data;
 
-        // Fallback if an RPC is missing: fetch slim columns and aggregate client-side (less ideal).
+        // fallback if rpc fails
         if (usersGroupedRes.error || !usersByStatus) {
           const { data, error } = await supabase.from("users").select("status");
           if (error) throw error;
@@ -84,7 +91,7 @@ export default function DashboardPage() {
           rides: r.count ?? 0,
           complaints: c.count ?? 0,
           verificationsPending: v.count ?? 0,
-          petrolPrice: petrol.data?.value ?? "N/A",
+          petrolPrice: petrol.data?.value ?? "N/A", // ✅ now pulls correct row
           usersByStatus,
           ridesByStatus,
           complaintsByStatus,
