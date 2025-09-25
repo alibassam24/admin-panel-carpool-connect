@@ -106,6 +106,12 @@ export default function DashboardPage() {
     };
   }, []);
 
+  useRealtime("users", fetchStats);
+  useRealtime("rides", fetchStats);
+  useRealtime("complaints", fetchStats);
+  useRealtime("driver_documents", fetchStats);
+  useRealtime("settings", fetchStats);
+
   if (err) return <div className="error-text">{err}</div>;
   if (!stats) return <div>Loading dashboard…</div>;
 

@@ -29,7 +29,7 @@ export default function SettingsPage() {
       cancelled = true;
     };
   }, []);
-
+  useRealtime("settings", fetchSettings);
   const update = async (row, newValue) => {
     setSavingKey(row.key);
     setErr("");

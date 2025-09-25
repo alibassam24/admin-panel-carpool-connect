@@ -62,6 +62,9 @@ export default function UsersPage() {
     return () => { cancelled = true; };
   }, [page, filters]);
 
+
+  useRealtime("users", fetchUsers);
+
   // ---- Row Actions ----
   const updateStatus = async (userId, newStatus) => {
     if (!window.confirm(`Mark this user as ${newStatus}?`)) return;

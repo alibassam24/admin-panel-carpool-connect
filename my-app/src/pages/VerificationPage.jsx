@@ -90,6 +90,7 @@ export default function VerificationPage() {
     };
   }, [page, filters]);
 
+  useRealtime("driver_documents", fetchDocs);
   // ---------------- Actions ----------------
   const updateDocStatus = async (docId, newStatus, rejection_reason = null) => {
     try {

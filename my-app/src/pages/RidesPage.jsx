@@ -57,6 +57,8 @@ export default function RidesPage() {
     return () => { cancelled = true; };
   }, [page, filters]);
 
+  useRealtime("rides", fetchRides);
+
   return (
     <div className="card">
       <div className="flex-between filter-bar">
@@ -121,3 +123,5 @@ export default function RidesPage() {
     </div>
   );
 }
+
+
