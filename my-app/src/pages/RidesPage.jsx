@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import Pagination from "../components/Pagination";
-import { useRealtime } from "../hooks/useRealtime";
+
 export default function RidesPage() {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(1);
@@ -56,8 +56,6 @@ export default function RidesPage() {
     })();
     return () => { cancelled = true; };
   }, [page, filters]);
-
-  useRealtime("rides", fetchRides);
 
   return (
     <div className="card">

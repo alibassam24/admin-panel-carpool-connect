@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import Pagination from "../components/Pagination";
 import { useAuth } from "../main"; // admin context
-import { useRealtime } from "../hooks/useRealtime";
+
 export default function VerificationPage() {
   const { user: admin } = useAuth();
   const [rows, setRows] = useState([]);
@@ -90,7 +90,7 @@ export default function VerificationPage() {
     };
   }, [page, filters]);
 
-  useRealtime("driver_documents", fetchDocs);
+ 
   // ---------------- Actions ----------------
   const updateDocStatus = async (docId, newStatus, rejection_reason = null) => {
     try {

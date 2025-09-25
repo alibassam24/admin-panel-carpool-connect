@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { useRealtime } from "../hooks/useRealtime";
+
 export default function SettingsPage() {
   const [rows, setRows] = useState([]);
   const [err, setErr] = useState("");
@@ -29,7 +29,7 @@ export default function SettingsPage() {
       cancelled = true;
     };
   }, []);
-  useRealtime("settings", fetchSettings);
+  
   const update = async (row, newValue) => {
     setSavingKey(row.key);
     setErr("");

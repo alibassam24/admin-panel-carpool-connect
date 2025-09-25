@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import Pagination from "../components/Pagination";
-import { useRealtime } from "../hooks/useRealtime";
 
 export default function ComplaintsPage() {
   const [rows, setRows] = useState([]);
@@ -53,7 +52,7 @@ export default function ComplaintsPage() {
     })();
     return () => { cancelled = true; };
   }, [page, filters]);
-  useRealtime("complaints", fetchComplaints);
+ 
   // Admin action: update status
   const updateStatus = async (id, newStatus) => {
     if (!window.confirm(`Mark complaint #${id} as ${newStatus}?`)) return;
