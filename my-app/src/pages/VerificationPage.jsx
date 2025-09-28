@@ -16,7 +16,11 @@ export default function VerificationPage() {
   const pageSize = 6;
 
   // reject modal
-  const [rejectModal, setRejectModal] = useState({ open: false, docId: null, reason: "" });
+  const [rejectModal, setRejectModal] = useState({
+    open: false,
+    docId: null,
+    reason: "",
+  });
 
   // image preview modal
   const [preview, setPreview] = useState(null);
@@ -78,9 +82,24 @@ export default function VerificationPage() {
         const { data, error } = await dataQ;
         if (error) throw error;
         if (cancelled) return;
-        setRows(data || []);
+
+        // ✅ Convert storage paths to public URLs
+        const bucket = supabase.storage.from("driver_docs");
+        const toPublicUrl = (path) =>
+          path ? bucket.getPublicUrl(path).data.publicUrl : null;
+
+        const withUrls = (data || []).map((row) => ({
+          ...row,
+          license_url: toPublicUrl(row.license_url),
+          car_plate_url: toPublicUrl(row.car_plate_url),
+          cnic_front_url: toPublicUrl(row.cnic_front_url),
+          cnic_back_url: toPublicUrl(row.cnic_back_url),
+        }));
+
+        setRows(withUrls);
       } catch (e) {
-        if (!cancelled) setErr(e.message || "Failed to load verification requests");
+        if (!cancelled)
+          setErr(e.message || "Failed to load verification requests");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -90,7 +109,6 @@ export default function VerificationPage() {
     };
   }, [page, filters]);
 
- 
   // ---------------- Actions ----------------
   const updateDocStatus = async (docId, newStatus, rejection_reason = null) => {
     try {

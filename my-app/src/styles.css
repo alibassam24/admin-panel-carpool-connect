@@ -807,3 +807,9 @@ button, input, select, textarea { font-family: inherit; }
     display: block;
   }
 }
+
+@media (max-width: 768px) {
+  .topbar {
+    background: #111827; /* solid dark charcoal */
+  }
+}
