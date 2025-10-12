@@ -88,7 +88,7 @@ export default function VerificationPage() {
 const bucket = supabase.storage.from("driver_docs");
 const toPublicUrl = (value) => {
   if (!value) return null;
-
+  if (!value) return "/missing-doc.png"; 
   // Already a full URL (starts with http/https)
   if (value.startsWith("http://") || value.startsWith("https://")) {
     return value;
@@ -319,7 +319,8 @@ const withUrls = (data || []).map((row) => ({
               <div className="docs-grid">
                 {docUrls.map((url, i) => (
                   <div className="doc-box" key={i}>
-                    <img src={url} alt={docLabels[i]} className="doc-thumb" />
+                    <img src={url} alt={docLabels[i]} className="doc-thumb" 
+                    onError={(e) => (e.target.src = "/missing-doc.png")}/>
                     <button
                       className="btn-sm btn-secondary view-btn"
                       onClick={() => openPreview(docUrls, i)}
