@@ -84,17 +84,27 @@ export default function VerificationPage() {
         if (cancelled) return;
 
         // ✅ Convert storage paths to public URLs
-        const bucket = supabase.storage.from("driver_docs");
-        const toPublicUrl = (path) =>
-          path ? bucket.getPublicUrl(path).data.publicUrl : null;
+       // ✅ Smarter URL handler
+const bucket = supabase.storage.from("driver_docs");
+const toPublicUrl = (value) => {
+  if (!value) return null;
 
-        const withUrls = (data || []).map((row) => ({
-          ...row,
-          license_url: toPublicUrl(row.license_url),
-          car_plate_url: toPublicUrl(row.car_plate_url),
-          cnic_front_url: toPublicUrl(row.cnic_front_url),
-          cnic_back_url: toPublicUrl(row.cnic_back_url),
-        }));
+  // Already a full URL (starts with http/https)
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+
+  // Otherwise treat as storage path
+  return bucket.getPublicUrl(value).data.publicUrl;
+};
+
+const withUrls = (data || []).map((row) => ({
+  ...row,
+  license_url: toPublicUrl(row.license_url),
+  car_plate_url: toPublicUrl(row.car_plate_url),
+  cnic_front_url: toPublicUrl(row.cnic_front_url),
+  cnic_back_url: toPublicUrl(row.cnic_back_url),
+}));
 
         setRows(withUrls);
       } catch (e) {
