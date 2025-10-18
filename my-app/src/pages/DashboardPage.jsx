@@ -4,8 +4,8 @@ import { supabase } from "../lib/supabase";
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  // Fallback aggregator if RPCs don’t exist yet
   const countBy = (rows, key) => {
     const map = new Map();
     for (const r of rows || []) {
@@ -15,12 +15,11 @@ export default function DashboardPage() {
     return Array.from(map, ([status, count]) => ({ status, count }));
   };
 
-  // ---------------- Fetch Function ----------------
   const fetchStats = async () => {
     try {
       setErr("");
+      setLoading(true);
 
-      // --- Totals (cheap HEAD counts) ---
       const [u, r, c, v, petrol] = await Promise.all([
         supabase.from("users").select("*", { head: true, count: "exact" }),
         supabase.from("rides").select("*", { head: true, count: "exact" }),
@@ -36,13 +35,11 @@ export default function DashboardPage() {
           .maybeSingle(),
       ]);
 
-      if (u.error) throw u.error;
-      if (r.error) throw r.error;
-      if (c.error) throw c.error;
-      if (v.error) throw v.error;
-      if (petrol.error) throw petrol.error;
+      const throwIfErr = (res) => {
+        if (res.error) throw res.error;
+      };
+      [u, r, c, v, petrol].forEach(throwIfErr);
 
-      // --- Grouped counts via RPCs (with safe fallback) ---
       const [
         usersGroupedRes,
         ridesGroupedRes,
@@ -55,36 +52,25 @@ export default function DashboardPage() {
         supabase.rpc("driver_docs_status_counts"),
       ]);
 
-      let usersByStatus = usersGroupedRes.data;
-      let ridesByStatus = ridesGroupedRes.data;
-      let complaintsByStatus = complaintsGroupedRes.data;
-      let driverDocsByStatus = docsGroupedRes.data;
+      const safeGroup = async (rpcRes, table) => {
+        if (rpcRes.error || !rpcRes.data) {
+          const { data, error } = await supabase.from(table).select("status");
+          if (error) throw error;
+          return countBy(data, "status");
+        }
+        return rpcRes.data;
+      };
 
-      // Fallback client-side grouping if RPC missing
-      if (usersGroupedRes.error || !usersByStatus) {
-        const { data, error } = await supabase.from("users").select("status");
-        if (error) throw error;
-        usersByStatus = countBy(data, "status");
-      }
-      if (ridesGroupedRes.error || !ridesByStatus) {
-        const { data, error } = await supabase.from("rides").select("status");
-        if (error) throw error;
-        ridesByStatus = countBy(data, "status");
-      }
-      if (complaintsGroupedRes.error || !complaintsByStatus) {
-        const { data, error } = await supabase
-          .from("complaints")
-          .select("status");
-        if (error) throw error;
-        complaintsByStatus = countBy(data, "status");
-      }
-      if (docsGroupedRes.error || !driverDocsByStatus) {
-        const { data, error } = await supabase
-          .from("driver_documents")
-          .select("status");
-        if (error) throw error;
-        driverDocsByStatus = countBy(data, "status");
-      }
+      const usersByStatus = await safeGroup(usersGroupedRes, "users");
+      const ridesByStatus = await safeGroup(ridesGroupedRes, "rides");
+      const complaintsByStatus = await safeGroup(
+        complaintsGroupedRes,
+        "complaints"
+      );
+      const driverDocsByStatus = await safeGroup(
+        docsGroupedRes,
+        "driver_documents"
+      );
 
       setStats({
         users: u.count ?? 0,
@@ -98,30 +84,32 @@ export default function DashboardPage() {
         driverDocsByStatus,
       });
     } catch (e) {
-      setErr(e.message || "Failed to load dashboard");
+      console.error("Dashboard fetch error:", e);
+      setErr(e.message || "Failed to load dashboard data");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ---------------- Effects ----------------
   useEffect(() => {
     fetchStats();
   }, []);
 
-  // Realtime subscription
   useEffect(() => {
-    const tables = ["users", "rides", "complaints", "driver_documents", "settings"];
+    const tables = [
+      "users",
+      "rides",
+      "complaints",
+      "driver_documents",
+      "settings",
+    ];
 
     const channels = tables.map((table) =>
       supabase
         .channel(`${table}-changes`)
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table },
-          (payload) => {
-            console.log(`🔄 Change detected on ${table}:`, payload);
-            fetchStats(); // refresh dashboard
-          }
-        )
+        .on("postgres_changes", { event: "*", schema: "public", table }, () => {
+          fetchStats();
+        })
         .subscribe()
     );
 
@@ -130,38 +118,79 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // ---------------- Render ----------------
-  if (err) return <div className="error-text">{err}</div>;
-  if (!stats) return <div>Loading dashboard…</div>;
+  // ---------------- UI ----------------
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500">
+        Loading dashboard…
+      </div>
+    );
+
+  if (err)
+    return (
+      <div className="text-center py-10">
+        <p className="text-red-500 mb-4 font-semibold">{err}</p>
+        <button
+          onClick={fetchStats}
+          className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
+        >
+          Retry
+        </button>
+      </div>
+    );
+
+  const StatCard = ({ title, value }) => (
+    <div className="card bg-white/90 dark:bg-gray-800 p-4 rounded-xl shadow-md hover:shadow-lg transition">
+      <h3 className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
+        {title}
+      </h3>
+      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+        {value}
+      </p>
+    </div>
+  );
+
+  const StatusList = ({ title, data }) => (
+    <div className="card bg-white/90 dark:bg-gray-800 p-4 rounded-xl shadow-md">
+      <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
+        {title}
+      </h3>
+      {data?.length ? (
+        <ul className="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+          {data.map((x) => (
+            <li key={x.status} className="py-1 flex justify-between">
+              <span className="capitalize">{x.status}</span>
+              <span className="font-semibold">{x.count}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-gray-500 text-sm italic">No data</p>
+      )}
+    </div>
+  );
 
   return (
-    <div className="grid dashboard-grid">
-      <div className="card"><b>Total Users</b><div>{stats.users}</div></div>
-      <div className="card"><b>Total Rides</b><div>{stats.rides}</div></div>
-      <div className="card"><b>Complaints</b><div>{stats.complaints}</div></div>
-      <div className="card"><b>Driver Verifications (Pending)</b><div>{stats.verificationsPending}</div></div>
-      <div className="card"><b>Petrol Price</b><div>{stats.petrolPrice}</div></div>
+    <div className="p-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <StatCard title="Total Users" value={stats.users} />
+      <StatCard title="Total Rides" value={stats.rides} />
+      <StatCard title="Complaints" value={stats.complaints} />
+      <StatCard
+        title="Driver Verifications (Pending)"
+        value={stats.verificationsPending}
+      />
+      <StatCard title="Petrol Price" value={stats.petrolPrice} />
 
-      <div className="card">
-        <h3>Users by Status</h3>
-        <ul>{stats.usersByStatus.map(x => <li key={x.status}>{x.status}: {x.count}</li>)}</ul>
-      </div>
-      <div className="card">
-        <h3>Rides by Status</h3>
-        <ul>{stats.ridesByStatus.map(x => <li key={x.status}>{x.status}: {x.count}</li>)}</ul>
-      </div>
-      <div className="card">
-        <h3>Complaints by Status</h3>
-        {stats.complaintsByStatus.length > 0 ? (
-          <ul>{stats.complaintsByStatus.map(x => <li key={x.status}>{x.status}: {x.count}</li>)}</ul>
-        ) : (
-          <p>No complaints yet 🎉</p>
-        )}
-      </div>
-      <div className="card">
-        <h3>Driver Docs by Status</h3>
-        <ul>{stats.driverDocsByStatus.map(x => <li key={x.status}>{x.status}: {x.count}</li>)}</ul>
-      </div>
+      <StatusList title="Users by Status" data={stats.usersByStatus} />
+      <StatusList title="Rides by Status" data={stats.ridesByStatus} />
+      <StatusList
+        title="Complaints by Status"
+        data={stats.complaintsByStatus}
+      />
+      <StatusList
+        title="Driver Docs by Status"
+        data={stats.driverDocsByStatus}
+      />
     </div>
   );
 }
