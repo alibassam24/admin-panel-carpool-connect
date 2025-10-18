@@ -1,5 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import {
+  Users,
+  Car,
+  FileWarning,
+  ClipboardCheck,
+  Fuel,
+  RefreshCcw,
+  AlertCircle,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  Tooltip,
+  Cell,
+} from "recharts";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
@@ -103,7 +121,6 @@ export default function DashboardPage() {
       "driver_documents",
       "settings",
     ];
-
     const channels = tables.map((table) =>
       supabase
         .channel(`${table}-changes`)
@@ -112,7 +129,6 @@ export default function DashboardPage() {
         })
         .subscribe()
     );
-
     return () => {
       channels.forEach((ch) => supabase.removeChannel(ch));
     };
@@ -121,7 +137,7 @@ export default function DashboardPage() {
   // ---------------- UI ----------------
   if (loading)
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-gray-500 animate-pulse">
         Loading dashboard…
       </div>
     );
@@ -129,68 +145,113 @@ export default function DashboardPage() {
   if (err)
     return (
       <div className="text-center py-10">
+        <AlertCircle className="mx-auto text-red-500 w-10 h-10 mb-3" />
         <p className="text-red-500 mb-4 font-semibold">{err}</p>
         <button
           onClick={fetchStats}
-          className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 mx-auto"
         >
-          Retry
+          <RefreshCcw size={16} /> Retry
         </button>
       </div>
     );
 
-  const StatCard = ({ title, value }) => (
-    <div className="card bg-white/90 dark:bg-gray-800 p-4 rounded-xl shadow-md hover:shadow-lg transition">
-      <h3 className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
-        {title}
-      </h3>
-      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-        {value}
-      </p>
-    </div>
-  );
+  const cards = [
+    {
+      title: "Total Users",
+      value: stats.users,
+      icon: <Users className="text-blue-500" size={24} />,
+    },
+    {
+      title: "Total Rides",
+      value: stats.rides,
+      icon: <Car className="text-green-500" size={24} />,
+    },
+    {
+      title: "Complaints",
+      value: stats.complaints,
+      icon: <FileWarning className="text-yellow-500" size={24} />,
+    },
+    {
+      title: "Driver Verifications (Pending)",
+      value: stats.verificationsPending,
+      icon: <ClipboardCheck className="text-purple-500" size={24} />,
+    },
+    {
+      title: "Petrol Price",
+      value: stats.petrolPrice,
+      icon: <Fuel className="text-red-500" size={24} />,
+    },
+  ];
 
-  const StatusList = ({ title, data }) => (
-    <div className="card bg-white/90 dark:bg-gray-800 p-4 rounded-xl shadow-md">
-      <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
+  const StatusChart = ({ title, data }) => (
+    <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md">
+      <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-4">
         {title}
       </h3>
       {data?.length ? (
-        <ul className="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-          {data.map((x) => (
-            <li key={x.status} className="py-1 flex justify-between">
-              <span className="capitalize">{x.status}</span>
-              <span className="font-semibold">{x.count}</span>
-            </li>
-          ))}
-        </ul>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={data}>
+            <XAxis dataKey="status" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={
+                    ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][
+                      index % 4
+                    ] /* cycle colors */
+                  }
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       ) : (
-        <p className="text-gray-500 text-sm italic">No data</p>
+        <p className="text-gray-500 text-sm italic">No data available</p>
       )}
     </div>
   );
 
   return (
-    <div className="p-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <StatCard title="Total Users" value={stats.users} />
-      <StatCard title="Total Rides" value={stats.rides} />
-      <StatCard title="Complaints" value={stats.complaints} />
-      <StatCard
-        title="Driver Verifications (Pending)"
-        value={stats.verificationsPending}
-      />
-      <StatCard title="Petrol Price" value={stats.petrolPrice} />
+    <div className="p-6 space-y-8">
+      {/* Stats Cards */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {cards.map((card) => (
+          <div
+            key={card.title}
+            className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md flex items-center justify-between hover:shadow-lg transition"
+          >
+            <div>
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-semibold">
+                {card.title}
+              </h3>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+                {card.value}
+              </p>
+            </div>
+            <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+              {card.icon}
+            </div>
+          </div>
+        ))}
+      </div>
 
-      <StatusList title="Users by Status" data={stats.usersByStatus} />
-      <StatusList title="Rides by Status" data={stats.ridesByStatus} />
-      <StatusList
-        title="Complaints by Status"
-        data={stats.complaintsByStatus}
-      />
-      <StatusList
-        title="Driver Docs by Status"
-        data={stats.driverDocsByStatus}
-      />
+      {/* Status Charts */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+        <StatusChart title="Users by Status" data={stats.usersByStatus} />
+        <StatusChart title="Rides by Status" data={stats.ridesByStatus} />
+        <StatusChart
+          title="Complaints by Status"
+          data={stats.complaintsByStatus}
+        />
+        <StatusChart
+          title="Driver Docs by Status"
+          data={stats.driverDocsByStatus}
+        />
+      </div>
     </div>
   );
 }
