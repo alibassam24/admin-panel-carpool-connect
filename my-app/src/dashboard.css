@@ -1,0 +1,131 @@
+/* Dark background container */
+.dashboard-container {
+  background-color: #0f1113;
+  min-height: 100vh;
+  padding: 2.5rem;
+  color: #f1f5f9;
+  font-family: "Inter", sans-serif;
+}
+
+/* Dashboard title */
+.dashboard-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 2rem;
+}
+
+/* Card grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Dashboard box base */
+.dashboard-box {
+  background-color: #181a1c;
+  border: 1px solid #2a2d31;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  color: #f8fafc;
+  transition: all 0.3s ease;
+}
+
+.dashboard-box:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+/* Gradients (dark subtle tones) */
+.gradient-blue {
+  background: linear-gradient(135deg, #1e293b 0%, #1e3a8a 100%);
+}
+.gradient-green {
+  background: linear-gradient(135deg, #1f2937 0%, #065f46 100%);
+}
+.gradient-yellow {
+  background: linear-gradient(135deg, #292524 0%, #78350f 100%);
+}
+.gradient-purple {
+  background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%);
+}
+.gradient-red {
+  background: linear-gradient(135deg, #2b0d0d 0%, #7f1d1d 100%);
+}
+
+/* Card text */
+.card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 0.3rem;
+}
+
+.card-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+/* Icon box */
+.icon-box {
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+}
+
+/* Charts */
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.chart-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #e2e8f0;
+}
+
+/* Chart text */
+.recharts-cartesian-axis-tick-value {
+  fill: #94a3b8 !important;
+  font-size: 12px;
+}
+.recharts-tooltip-wrapper {
+  background-color: rgba(30, 30, 30, 0.9);
+  border-radius: 0.5rem;
+  color: white;
+  padding: 0.5rem;
+}
+
+/* States */
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 4rem;
+  color: #9ca3af;
+}
+
+.retry-btn {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+.retry-btn:hover {
+  background-color: #1e40af;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1.5rem;
+  }
+}

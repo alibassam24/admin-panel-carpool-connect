@@ -18,6 +18,7 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
+import "../../src/dashboard.css"; // custom CSS
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
@@ -134,23 +135,17 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // ---------------- UI ----------------
   if (loading)
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500 animate-pulse">
-        Loading dashboard…
-      </div>
+      <div className="loading-state">Loading dashboard…</div>
     );
 
   if (err)
     return (
-      <div className="text-center py-10">
-        <AlertCircle className="mx-auto text-red-500 w-10 h-10 mb-3" />
-        <p className="text-red-500 mb-4 font-semibold">{err}</p>
-        <button
-          onClick={fetchStats}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 mx-auto"
-        >
+      <div className="error-state">
+        <AlertCircle className="icon" />
+        <p className="msg">{err}</p>
+        <button onClick={fetchStats} className="retry-btn">
           <RefreshCcw size={16} /> Retry
         </button>
       </div>
@@ -160,97 +155,86 @@ export default function DashboardPage() {
     {
       title: "Total Users",
       value: stats.users,
-      icon: <Users className="text-blue-500" size={24} />,
+      icon: <Users className="text-blue-600" size={30} />,
+      colorClass: "gradient-blue",
     },
     {
       title: "Total Rides",
       value: stats.rides,
-      icon: <Car className="text-green-500" size={24} />,
+      icon: <Car className="text-green-600" size={30} />,
+      colorClass: "gradient-green",
     },
     {
       title: "Complaints",
       value: stats.complaints,
-      icon: <FileWarning className="text-yellow-500" size={24} />,
+      icon: <FileWarning className="text-yellow-600" size={30} />,
+      colorClass: "gradient-yellow",
     },
     {
       title: "Driver Verifications (Pending)",
       value: stats.verificationsPending,
-      icon: <ClipboardCheck className="text-purple-500" size={24} />,
+      icon: <ClipboardCheck className="text-purple-600" size={30} />,
+      colorClass: "gradient-purple",
     },
     {
       title: "Petrol Price",
       value: stats.petrolPrice,
-      icon: <Fuel className="text-red-500" size={24} />,
+      icon: <Fuel className="text-red-600" size={30} />,
+      colorClass: "gradient-red",
     },
   ];
 
   const StatusChart = ({ title, data }) => (
-    <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md">
-      <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-4">
-        {title}
-      </h3>
+    <div className="dashboard-box hover-lift">
+      <h3 className="chart-title">{title}</h3>
       {data?.length ? (
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={data}>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={data} barSize={30}>
             <XAxis dataKey="status" />
             <YAxis allowDecimals={false} />
             <Tooltip />
             <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-              {data.map((entry, index) => (
+              {data.map((_, i) => (
                 <Cell
-                  key={`cell-${index}`}
-                  fill={
-                    ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][
-                      index % 4
-                    ] /* cycle colors */
-                  }
+                  key={i}
+                  fill={["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][i % 4]}
                 />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       ) : (
-        <p className="text-gray-500 text-sm italic">No data available</p>
+        <p className="no-data">No data available</p>
       )}
     </div>
   );
 
   return (
-    <div className="p-6 space-y-8">
-      {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="dashboard-container">
+      <h1 className="dashboard-title">Admin Dashboard</h1>
+
+      {/* Cards */}
+      <div className="dashboard-grid">
         {cards.map((card) => (
           <div
             key={card.title}
-            className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md flex items-center justify-between hover:shadow-lg transition"
+            className={`dashboard-box ${card.colorClass} hover-lift flex justify-between items-center`}
           >
             <div>
-              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-semibold">
-                {card.title}
-              </h3>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-                {card.value}
-              </p>
+              <h3 className="card-title">{card.title}</h3>
+              <p className="card-value">{card.value}</p>
             </div>
-            <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
-              {card.icon}
-            </div>
+            <div className="icon-box">{card.icon}</div>
           </div>
         ))}
       </div>
 
-      {/* Status Charts */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+      {/* Charts */}
+      <div className="dashboard-charts">
         <StatusChart title="Users by Status" data={stats.usersByStatus} />
         <StatusChart title="Rides by Status" data={stats.ridesByStatus} />
-        <StatusChart
-          title="Complaints by Status"
-          data={stats.complaintsByStatus}
-        />
-        <StatusChart
-          title="Driver Docs by Status"
-          data={stats.driverDocsByStatus}
-        />
+        <StatusChart title="Complaints by Status" data={stats.complaintsByStatus} />
+        <StatusChart title="Driver Docs by Status" data={stats.driverDocsByStatus} />
       </div>
     </div>
   );
