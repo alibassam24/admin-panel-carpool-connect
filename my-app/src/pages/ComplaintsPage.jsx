@@ -41,7 +41,7 @@ export default function ComplaintsPage() {
   complaint_text,
   status,
   created_at,
-  profiles:profiles(full_name)
+  users:users(email)
 `)
 
           .order("created_at", { ascending: false })
@@ -121,7 +121,7 @@ export default function ComplaintsPage() {
             {rows.map(c=>(
               <tr key={c.id}>
                 <td>{c.id}</td>
-                <td>{c.profiles?.full_name || c.user_id}</td>
+                <td>{c.users?.email}</td>
                 <td>{c.ride_id || "-"}</td>
                 <td title={c.complaint_text}>
                   {c.complaint_text.length > 40
