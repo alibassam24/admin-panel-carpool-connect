@@ -34,7 +34,16 @@ export default function ComplaintsPage() {
 
         let dataQ = supabase
           .from("complaints")
-          .select("id, user_id, ride_id, complaint_text, status, created_at")
+         .select(`
+  id,
+  user_id,
+  ride_id,
+  complaint_text,
+  status,
+  created_at,
+  profiles:profiles(full_name)
+`)
+
           .order("created_at", { ascending: false })
           .range(from, to);
         if (status !== "All") dataQ = dataQ.eq("status", status);
@@ -112,7 +121,7 @@ export default function ComplaintsPage() {
             {rows.map(c=>(
               <tr key={c.id}>
                 <td>{c.id}</td>
-                <td>{c.user_id}</td>
+                <td>{c.profiles?.full_name || c.user_id}</td>
                 <td>{c.ride_id || "-"}</td>
                 <td title={c.complaint_text}>
                   {c.complaint_text.length > 40
