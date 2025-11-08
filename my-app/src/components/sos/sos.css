@@ -1,19 +1,44 @@
+/* ===== Base Layout ===== */
 .sos-list {
-  margin-top: 1rem;
+  margin: 1rem auto;
   padding: 1rem;
+  max-width: 900px; /* keeps nice centered layout on large screens */
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.sos-list .title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #f87171; /* Red */
-  margin-bottom: 1rem;
-}
-
-.alert-card {
+/* ===== Header ===== */
+.header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.sos-list .title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f87171;
+  margin: 0;
+}
+
+.sort-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  background: white;
+  min-width: 150px;
+}
+
+/* ===== Cards ===== */
+.alert-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
   border-radius: 14px;
   padding: 1rem 1.2rem;
   margin-bottom: 12px;
@@ -33,12 +58,19 @@
 .alert-card.resolved {
   border-color: #22c55e;
   background: #22c55e10;
-  opacity: 0.75;
+  opacity: 0.8;
+}
+
+/* ===== Info Column ===== */
+.alert-info {
+  flex: 1 1 60%;
+  min-width: 220px;
 }
 
 .alert-info .user {
-  color: #ffffff;
+  color: #fff;
   font-weight: 600;
+  word-break: break-word;
 }
 
 .alert-info .meta {
@@ -46,20 +78,32 @@
   color: #9ca3af;
 }
 
+.alert-info small {
+  display: block;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* ===== Actions Column ===== */
 .alert-actions {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  align-items: flex-end;
+  flex: 0 0 auto;
 }
 
+/* Buttons */
 .btn-show,
 .btn-resolve {
   border: none;
-  padding: 6px 12px;
+  padding: 7px 14px;
   font-size: 0.9rem;
   border-radius: 8px;
   cursor: pointer;
-  transition: 0.2s ease;
+  transition: 0.25s ease;
+  width: 100%;
+  max-width: 120px;
 }
 
 .btn-show {
@@ -69,7 +113,7 @@
 
 .btn-resolve {
   background: #22c55e;
-  color: white;
+  color: #fff;
 }
 
 .btn-show:hover {
@@ -80,9 +124,202 @@
   background: #16a34a;
 }
 
-.loading, .empty {
+/* ===== Loading / Empty ===== */
+.loading,
+.empty {
   text-align: center;
   padding: 2rem;
   color: #9ca3af;
   font-style: italic;
 }
+
+/* ===== Pagination ===== */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination button {
+  background: #255a45;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== RESPONSIVENESS ===== */
+
+/* Small phones */
+@media (max-width: 480px) {
+  .sos-list {
+    padding: 0.8rem;
+  }
+
+  .sos-list .title {
+    font-size: 1.2rem;
+    text-align: center;
+    width: 100%;
+  }
+
+  .header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sort-select {
+    width: 100%;
+  }
+
+  .alert-card {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+  }
+
+  .alert-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .btn-show,
+  .btn-resolve {
+    flex: 1;
+    margin: 0 4px;
+    max-width: none;
+  }
+}
+
+/* Tablets */
+@media (min-width: 481px) and (max-width: 768px) {
+  .sos-list {
+    padding: 1rem;
+  }
+
+  .alert-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .alert-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+
+  .btn-show,
+  .btn-resolve {
+    max-width: 140px;
+  }
+}
+
+/* Large desktops */
+@media (min-width: 1024px) {
+  .sos-list {
+    max-width: 1000px;
+  }
+}
+.alert-card:hover { transform: scale(1.01); }
+.header-row {
+  position: sticky;
+  top: 0;
+  background: rgba(18,18,18,0.8);
+  backdrop-filter: blur(6px);
+  z-index: 10;
+}
+
+
+
+/* === MAP WRAPPER === */
+.sos-map-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* === MAP CANVAS === */
+.sos-map-container {
+  width: 100%;
+  height: 350px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+@media (max-width: 1024px) { .sos-map-container { height: 400px; } }
+@media (max-width: 768px)  { .sos-map-container { height: 300px; } }
+@media (max-width: 480px)  { .sos-map-container { height: 220px; } }
+
+/* === MARKER === */
+.sos-marker {
+  width: 28px;
+  height: 28px;
+  background-color: #ef4444;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ef4444aa;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+.sos-marker:hover { transform: scale(1.15); }
+
+/* === FLOATING DETAIL BOX === */
+.map-info-box {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(17, 24, 39, 0.95); /* dark glass */
+  color: #f9fafb;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  width: 300px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease;
+}
+
+.map-info-box .info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 8px;
+}
+
+.map-info-box .info-header h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ef4444;
+  margin: 0;
+}
+
+.map-info-box .info-header button {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.map-info-box .info-header button:hover { color: #f87171; }
+
+.map-info-box .info-body p {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  color: #e5e7eb;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
