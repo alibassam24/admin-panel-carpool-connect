@@ -8,6 +8,7 @@
     "@supabase/supabase-js": "^2.57.4",
     "framer-motion": "^12.23.13",
     "lucide-react": "^0.546.0",
+    "mapbox-gl": "^2.15.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1",

@@ -19,7 +19,8 @@ import ComplaintsPage from "./pages/ComplaintsPage";
 import VerificationPage from "./pages/VerificationPage";
 import SettingsPage from "./pages/SettingsPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-
+import SOSPage from "./pages/SOSPage"; 
+import "./components/sos/sos.css"
 import "./styles.css";
 
 /* ---------- Theme ---------- */
@@ -211,6 +212,10 @@ function Sidebar({ open, onClose }) {
       <NavLink className={linkCls} to="/verification" onClick={onClose}>
         Verification
       </NavLink>
+      <NavLink className={linkCls} to="/sos" onClick={onClose}>
+  SOS Alerts
+</NavLink>
+
       <NavLink className={linkCls} to="/settings" onClick={onClose}>
         Settings
       </NavLink>
@@ -344,6 +349,17 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+  path="/sos"
+  element={
+    <ProtectedRoute>
+      <AppShell>
+        <SOSPage />
+      </AppShell>
+    </ProtectedRoute>
+  }
+/>
+
       <Route
         path="/complaints"
         element={

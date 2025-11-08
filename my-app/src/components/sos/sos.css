@@ -1,0 +1,88 @@
+.sos-list {
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.sos-list .title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f87171; /* Red */
+  margin-bottom: 1rem;
+}
+
+.alert-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 12px;
+  background: #ffffff10;
+  backdrop-filter: blur(6px);
+  border: 1.5px solid transparent;
+  transition: all 0.3s ease;
+  color: #e5e7eb;
+}
+
+.alert-card.active {
+  border-color: #ef4444;
+  background: #ef444410;
+  box-shadow: 0 0 12px #ef444450;
+}
+
+.alert-card.resolved {
+  border-color: #22c55e;
+  background: #22c55e10;
+  opacity: 0.75;
+}
+
+.alert-info .user {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.alert-info .meta {
+  font-size: 0.9rem;
+  color: #9ca3af;
+}
+
+.alert-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-show,
+.btn-resolve {
+  border: none;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-show {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.btn-resolve {
+  background: #22c55e;
+  color: white;
+}
+
+.btn-show:hover {
+  background: #d1d5db;
+}
+
+.btn-resolve:hover {
+  background: #16a34a;
+}
+
+.loading, .empty {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+  font-style: italic;
+}
