@@ -13,7 +13,7 @@ export default function SOSList({ onFocus }) {
   const audioRef = useRef(null);
 
   useEffect(() => {
-    audioRef.current = new Audio("/assets/sounds/sos_alert.mp3");
+    audioRef.current = new Audio("src/assets/sounds/sos_alert.mp3");
     loadAlerts();
 
     // Real-time new alert listener
