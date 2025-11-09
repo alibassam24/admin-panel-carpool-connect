@@ -323,3 +323,12 @@
 }
 
 
+
+.sos-marker-img {
+  width: 42px;
+  height: 42px;
+  transform: translateY(-6px); /* fine-tune this if image tip is not exact */
+  cursor: pointer;
+  filter: drop-shadow(0 0 6px #ef4444aa);
+  z-index: 1000;
+}
