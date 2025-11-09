@@ -1,40 +1,91 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import Pagination from "../Pagination"; // ✅ your component
+import Pagination from "../Pagination";
 import "./sos.css";
 
 export default function SOSList({ onFocus }) {
   const [alerts, setAlerts] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10); // adjust as needed
+  const [pageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("newest");
+  const [soundReady, setSoundReady] = useState(false);
   const audioRef = useRef(null);
+  const lastPlayedRef = useRef(0);
 
+  // ===================================================
+  // 🎧 Initialize Audio Element
+  // ===================================================
   useEffect(() => {
+    console.log("🎧 Initializing native Audio element...");
     audioRef.current = new Audio("src/assets/sounds/sos_alert.mp3");
-    loadAlerts();
+    audioRef.current.preload = "auto";
+    audioRef.current.volume = 1.0;
 
-    // Real-time new alert listener
-    const channel = supabase
-      .channel("sos_alerts_live")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "sos_alerts" },
-        (payload) => {
-          setAlerts((prev) => [payload.new, ...prev]);
-          audioRef.current?.play();
+    audioRef.current.oncanplaythrough = () => {
+      console.log("✅ SOS alert sound loaded successfully.");
+    };
+
+    audioRef.current.onerror = (e) => {
+      console.error("❌ Error loading SOS sound file:", e);
+      console.log("🔎 Check file path: src/assets/sounds/sos_alert.mp3");
+    };
+  }, []);
+
+  // ===================================================
+  // 🟢 Unlock audio on first user gesture
+  // ===================================================
+  useEffect(() => {
+    const unlock = async () => {
+      try {
+        if (audioRef.current) {
+          await audioRef.current.play().then(() => {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            console.log("🔊 Audio unlocked for future alerts");
+            setSoundReady(true);
+          });
         }
-      )
-      .subscribe();
+      } catch (e) {
+        console.warn("⚠️ Could not auto-play (browser blocked):", e);
+      }
+      window.removeEventListener("click", unlock);
+    };
+    window.addEventListener("click", unlock);
+    return () => window.removeEventListener("click", unlock);
+  }, []);
 
-    return () => supabase.removeChannel(channel);
-  }, [sortBy, page]); // reload when page or sort changes
+  // ===================================================
+  // 🚨 Safe Sound Playback
+  // ===================================================
+  const playSOS = () => {
+    const now = Date.now();
+    if (now - lastPlayedRef.current < 1500) return; // debounce
+    lastPlayedRef.current = now;
 
-  // 🔹 Fetch alerts with pagination and filtering
+    if (!audioRef.current) {
+      console.warn("⚠️ Audio element not ready");
+      return;
+    }
+
+    try {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch((err) => {
+        console.warn("🚫 Audio play blocked:", err);
+      });
+      console.log("▶️ SOS sound played");
+    } catch (err) {
+      console.error("❌ Audio playback failed:", err);
+    }
+  };
+
+  // ===================================================
+  // 📡 Load alerts
+  // ===================================================
   async function loadAlerts() {
     setLoading(true);
+    console.log("📥 Fetching alerts, sort:", sortBy);
 
     let query = supabase
       .from("sos_alerts")
@@ -54,55 +105,85 @@ export default function SOSList({ onFocus }) {
         { count: "exact" }
       );
 
-    // exclude resolved for newest/oldest
-    if (sortBy === "newest" || sortBy === "oldest") {
-      query = query.eq("status", "active");
-    }
-
-    // ordering
+    if (sortBy === "newest" || sortBy === "oldest") query = query.eq("status", "active");
     if (sortBy === "newest") query = query.order("triggered_at", { ascending: false });
     else if (sortBy === "oldest") query = query.order("triggered_at", { ascending: true });
-    else query = query.order("triggered_at", { ascending: false }); // default fallback
+    else query = query.order("triggered_at", { ascending: false });
 
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     query = query.range(from, to);
 
     const { data, error, count } = await query;
+    if (error) console.error("❌ Error loading alerts:", error);
+    else console.log(`✅ Loaded ${data?.length || 0} alerts (count=${count})`);
 
-    if (!error) {
-      setAlerts(data || []);
-      setTotal(count || 0);
-    }
+    setAlerts(data || []);
+    setTotal(count || 0);
     setLoading(false);
   }
 
-  // 🔹 Resolve alert
+  // ===================================================
+  // 🛰️ Supabase Realtime Subscription
+  // ===================================================
+  useEffect(() => {
+    loadAlerts();
+
+    const channel = supabase
+      .channel("sos_alerts_live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "sos_alerts" },
+        (payload) => {
+          const newAlert = payload.new;
+          console.log("🚨 New SOS alert received:", newAlert);
+          setAlerts((prev) => [newAlert, ...prev]);
+          playSOS();
+        }
+      )
+      .subscribe((status) => console.log("📡 Realtime channel:", status));
+
+    return () => {
+      console.log("🧹 Unsubscribing Realtime channel...");
+      supabase.removeChannel(channel);
+    };
+  }, [sortBy, page]);
+
+  // ===================================================
+  // ✅ Resolve Alert
+  // ===================================================
   async function resolveAlert(id) {
+    console.log("✅ Resolving alert:", id);
     await supabase
       .from("sos_alerts")
       .update({ status: "resolved", resolved_at: new Date().toISOString() })
       .eq("id", id);
 
-    setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, status: "resolved" } : a)));
+    setAlerts((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, status: "resolved" } : a))
+    );
   }
 
-  // 🔹 Sorting logic for active/resolved
+  // ===================================================
+  // 🔃 Sort active/resolved
+  // ===================================================
   const sortedAlerts = [...alerts].sort((a, b) => {
     if (sortBy === "active") return a.status === "active" ? -1 : 1;
     if (sortBy === "resolved") return a.status === "resolved" ? -1 : 1;
-    return 0; // newest/oldest handled by query
+    return 0;
   });
 
+  // ===================================================
+  // 🖼️ Render
+  // ===================================================
   return (
     <div className="sos-list">
       <div className="header-row">
         <h3 className="title">🚨 SOS Alerts</h3>
-
         <select
           value={sortBy}
           onChange={(e) => {
-            setPage(1); // reset to first page when sort changes
+            setPage(1);
             setSortBy(e.target.value);
           }}
           className="sort-select"
@@ -112,6 +193,17 @@ export default function SOSList({ onFocus }) {
           <option value="active">Active First</option>
           <option value="resolved">Resolved First</option>
         </select>
+      </div>
+
+      <div
+        style={{
+          textAlign: "center",
+          marginBottom: "8px",
+          fontSize: "0.85rem",
+          color: soundReady ? "#22c55e" : "#f87171",
+        }}
+      >
+        {soundReady ? "🔊 Sound Enabled - Waiting for SOS..." : "🔒 Click anywhere to enable sound"}
       </div>
 
       {loading ? (
@@ -130,17 +222,14 @@ export default function SOSList({ onFocus }) {
                 <p className="meta">
                   Ride #{a.ride_id} —{" "}
                   <span>
-                    {a.latitude.toFixed(4)}, {a.longitude.toFixed(4)}
+                    {a.latitude?.toFixed?.(4)}, {a.longitude?.toFixed?.(4)}
                   </span>
                 </p>
                 <small>{new Date(a.triggered_at).toLocaleString()}</small>
               </div>
 
               <div className="alert-actions">
-                <button
-                  className="btn-show"
-                  onClick={() => onFocus(a)}
-                >
+                <button className="btn-show" onClick={() => onFocus(a)}>
                   Show
                 </button>
 
@@ -153,13 +242,7 @@ export default function SOSList({ onFocus }) {
             </div>
           ))}
 
-          {/* ✅ Pagination component */}
-          <Pagination
-            page={page}
-            total={total}
-            pageSize={pageSize}
-            onPage={(p) => setPage(p)}
-          />
+          <Pagination page={page} total={total} pageSize={pageSize} onPage={(p) => setPage(p)} />
         </>
       )}
     </div>
