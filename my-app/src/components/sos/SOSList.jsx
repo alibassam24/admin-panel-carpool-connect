@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import Pagination from "../Pagination";
 import "./sos.css";
+import sosAlertSound from '../../assets/sounds/sos_alert.mp3';
+
 
 export default function SOSList({ onFocus }) {
   const [alerts, setAlerts] = useState([]);
@@ -17,7 +19,7 @@ export default function SOSList({ onFocus }) {
 
   // ============ AUDIO INIT (once) ============
   useEffect(() => {
-    audioRef.current = new Audio("src/assets/sounds/sos_alert.mp3"); // ✅ fixed path
+    audioRef.current = new Audio(sosAlertSound); // ✅ fixed path
     audioRef.current.preload = "auto";
     audioRef.current.volume = 1.0;
 
