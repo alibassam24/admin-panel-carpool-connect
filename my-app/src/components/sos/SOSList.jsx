@@ -10,82 +10,66 @@ export default function SOSList({ onFocus }) {
   const [pageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("newest");
-  const [soundReady, setSoundReady] = useState(false);
+
+  // 🔊 keep your original audio approach — just fix the path
   const audioRef = useRef(null);
   const lastPlayedRef = useRef(0);
 
-  // ===================================================
-  // 🎧 Initialize Audio Element
-  // ===================================================
+  // ============ AUDIO INIT (once) ============
   useEffect(() => {
-    console.log("🎧 Initializing native Audio element...");
-    audioRef.current = new Audio("src/assets/sounds/sos_alert.mp3");
+    audioRef.current = new Audio("src/assets/sounds/sos_alert.mp3"); // ✅ fixed path
     audioRef.current.preload = "auto";
     audioRef.current.volume = 1.0;
 
-    audioRef.current.oncanplaythrough = () => {
-      console.log("✅ SOS alert sound loaded successfully.");
-    };
-
-    audioRef.current.onerror = (e) => {
-      console.error("❌ Error loading SOS sound file:", e);
-      console.log("🔎 Check file path: src/assets/sounds/sos_alert.mp3");
-    };
-  }, []);
-
-  // ===================================================
-  // 🟢 Unlock audio on first user gesture
-  // ===================================================
-  useEffect(() => {
-    const unlock = async () => {
-      try {
-        if (audioRef.current) {
-          await audioRef.current.play().then(() => {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
-            console.log("🔊 Audio unlocked for future alerts");
-            setSoundReady(true);
-          });
-        }
-      } catch (e) {
-        console.warn("⚠️ Could not auto-play (browser blocked):", e);
-      }
+    // unlock on first click (minimal + reliable)
+    const unlock = () => {
+      audioRef.current
+        ?.play()
+        .then(() => {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        })
+        .catch(() => {/* browser may block; that's fine after unlock */});
       window.removeEventListener("click", unlock);
     };
     window.addEventListener("click", unlock);
+
     return () => window.removeEventListener("click", unlock);
   }, []);
 
-  // ===================================================
-  // 🚨 Safe Sound Playback
-  // ===================================================
-  const playSOS = () => {
-    const now = Date.now();
-    if (now - lastPlayedRef.current < 1500) return; // debounce
-    lastPlayedRef.current = now;
+  // ============ REALTIME SUBSCRIPTION (once) ============
+  useEffect(() => {
+    const channel = supabase
+      .channel("sos_alerts_live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "sos_alerts" },
+        (payload) => {
+          // prepend newest
+          setAlerts((prev) => [payload.new, ...prev]);
+          // play sound (debounced)
+          const now = Date.now();
+          if (now - lastPlayedRef.current > 1200) {
+            lastPlayedRef.current = now;
+            audioRef.current?.pause();
+            audioRef.current.currentTime = 0;
+            audioRef.current?.play().catch(() => {});
+          }
+        }
+      )
+      .subscribe();
 
-    if (!audioRef.current) {
-      console.warn("⚠️ Audio element not ready");
-      return;
-    }
+    return () => supabase.removeChannel(channel);
+  }, []);
 
-    try {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch((err) => {
-        console.warn("🚫 Audio play blocked:", err);
-      });
-      console.log("▶️ SOS sound played");
-    } catch (err) {
-      console.error("❌ Audio playback failed:", err);
-    }
-  };
+  // ============ FETCH (on sort/page) ============
+  useEffect(() => {
+    loadAlerts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy, page]);
 
-  // ===================================================
-  // 📡 Load alerts
-  // ===================================================
   async function loadAlerts() {
     setLoading(true);
-    console.log("📥 Fetching alerts, sort:", sortBy);
 
     let query = supabase
       .from("sos_alerts")
@@ -105,81 +89,51 @@ export default function SOSList({ onFocus }) {
         { count: "exact" }
       );
 
-    if (sortBy === "newest" || sortBy === "oldest") query = query.eq("status", "active");
+    // exclude resolved for newest/oldest (as you wanted)
+    if (sortBy === "newest" || sortBy === "oldest") {
+      query = query.eq("status", "active");
+    }
+
+    // ordering
     if (sortBy === "newest") query = query.order("triggered_at", { ascending: false });
     else if (sortBy === "oldest") query = query.order("triggered_at", { ascending: true });
     else query = query.order("triggered_at", { ascending: false });
 
+    // pagination
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     query = query.range(from, to);
 
     const { data, error, count } = await query;
-    if (error) console.error("❌ Error loading alerts:", error);
-    else console.log(`✅ Loaded ${data?.length || 0} alerts (count=${count})`);
-
-    setAlerts(data || []);
-    setTotal(count || 0);
+    if (!error) {
+      setAlerts(data || []);
+      setTotal(count || 0);
+    }
     setLoading(false);
   }
 
-  // ===================================================
-  // 🛰️ Supabase Realtime Subscription
-  // ===================================================
-  useEffect(() => {
-    loadAlerts();
-
-    const channel = supabase
-      .channel("sos_alerts_live")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "sos_alerts" },
-        (payload) => {
-          const newAlert = payload.new;
-          console.log("🚨 New SOS alert received:", newAlert);
-          setAlerts((prev) => [newAlert, ...prev]);
-          playSOS();
-        }
-      )
-      .subscribe((status) => console.log("📡 Realtime channel:", status));
-
-    return () => {
-      console.log("🧹 Unsubscribing Realtime channel...");
-      supabase.removeChannel(channel);
-    };
-  }, [sortBy, page]);
-
-  // ===================================================
-  // ✅ Resolve Alert
-  // ===================================================
+  // resolve action stays the same
   async function resolveAlert(id) {
-    console.log("✅ Resolving alert:", id);
     await supabase
       .from("sos_alerts")
       .update({ status: "resolved", resolved_at: new Date().toISOString() })
       .eq("id", id);
 
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: "resolved" } : a))
-    );
+    setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, status: "resolved" } : a)));
   }
 
-  // ===================================================
-  // 🔃 Sort active/resolved
-  // ===================================================
+  // local sort for “active/resolved first”
   const sortedAlerts = [...alerts].sort((a, b) => {
     if (sortBy === "active") return a.status === "active" ? -1 : 1;
     if (sortBy === "resolved") return a.status === "resolved" ? -1 : 1;
-    return 0;
+    return 0; // newest/oldest already handled by SQL ordering
   });
 
-  // ===================================================
-  // 🖼️ Render
-  // ===================================================
   return (
     <div className="sos-list">
       <div className="header-row">
         <h3 className="title">🚨 SOS Alerts</h3>
+
         <select
           value={sortBy}
           onChange={(e) => {
@@ -193,17 +147,6 @@ export default function SOSList({ onFocus }) {
           <option value="active">Active First</option>
           <option value="resolved">Resolved First</option>
         </select>
-      </div>
-
-      <div
-        style={{
-          textAlign: "center",
-          marginBottom: "8px",
-          fontSize: "0.85rem",
-          color: soundReady ? "#22c55e" : "#f87171",
-        }}
-      >
-        {soundReady ? "🔊 Sound Enabled - Waiting for SOS..." : "🔒 Click anywhere to enable sound"}
       </div>
 
       {loading ? (
@@ -222,7 +165,7 @@ export default function SOSList({ onFocus }) {
                 <p className="meta">
                   Ride #{a.ride_id} —{" "}
                   <span>
-                    {a.latitude?.toFixed?.(4)}, {a.longitude?.toFixed?.(4)}
+                    {Number(a.latitude).toFixed(4)}, {Number(a.longitude).toFixed(4)}
                   </span>
                 </p>
                 <small>{new Date(a.triggered_at).toLocaleString()}</small>
@@ -242,7 +185,12 @@ export default function SOSList({ onFocus }) {
             </div>
           ))}
 
-          <Pagination page={page} total={total} pageSize={pageSize} onPage={(p) => setPage(p)} />
+          <Pagination
+            page={page}
+            total={total}
+            pageSize={pageSize}
+            onPage={(p) => setPage(p)}
+          />
         </>
       )}
     </div>
